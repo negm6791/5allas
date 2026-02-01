@@ -1,0 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: #F8FAFC;
+    color: #121D24;
+    -webkit-font-smoothing: initial;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.01em;
+    min-height: 100vh;
+}
+
+:root {
+    --primary-indigo: #4F46E5;
+    --background-slate: #F8FAFC;
+    --text-dark: #121D24;
+    --text-muted: #526071;
+    --card-border: #E2E8F0;
+}
+
+/* Quartz Surface - Premium Light Edition */
+.quartz-surface {
+    background: white;
+    border: 1px solid var(--card-border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+/* Advanced Surface Shadows */
+.premium-card {
+    background: white;
+    border: 1px solid var(--card-border);
+    border-radius: 1rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+@keyframes pulse-soft {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: scale(0.95);
+    }
+}
+
+.animate-pulse-soft {
+    animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.premium-card:hover {
+    box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.01),
+        0 40px 120px -20px rgba(15, 23, 42, 0.12);
+}
+
+/* Typography Scale */
+.text-display {
+    font-size: 3.5rem;
+    font-weight: 900;
+    letter-spacing: -0.05em;
+    line-height: 1;
+}
+
+.text-heading {
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #0f172a;
+}
+
+/* Custom Thin Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Professional Typography */
+h1,
+h2,
+h3 {
+    letter-spacing: -0.025em;
+    color: #0f172a;
+    /* slate-900 */
+    font-weight: 700;
+}
+
+.text-secondary {
+    color: #334155;
+    /* slate-700 */
+}
+
+.text-meta {
+    color: #64748b;
+    /* slate-500 */
+    font-size: 12px;
+}

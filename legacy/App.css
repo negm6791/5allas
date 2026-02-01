@@ -1,0 +1,14 @@
+/* Clean slate for tailwind-based 5allas v5.0 */
+:root {
+    color-scheme: light;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+    display: none;
+}

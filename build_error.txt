@@ -1,0 +1,27 @@
+
+> 5allas@0.0.0 build
+> vite build
+
+[36mrolldown-vite v7.2.5 [32mbuilding client environment for production...[36m[39m
+[2K
+transforming...Γ£ô 2106 modules transformed.
+rendering chunks...
+Γ£ù Build failed in 2.33s
+error during build:
+Build failed with 1 error:
+
+[MISSING_EXPORT] Error: "AutoAwesome" is not exported by "node_modules/lucide-react/dist/esm/lucide-react.js".
+   Γò¡ΓöÇ[ src/components/Insights.tsx:3:48 ]
+   Γöé
+ 3 Γöé import { TrendingUp, Zap, Calendar, ArrowLeft, AutoAwesome, Activity } from "lucide-react";
+   Γöé                                                ΓöÇΓöÇΓöÇΓöÇΓöÇΓö¼ΓöÇΓöÇΓöÇΓöÇΓöÇ  
+   Γöé                                                     Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ Missing export
+ΓöÇΓöÇΓöÇΓò»
+
+    at aggregateBindingErrorsIntoJsError (file:///C:/Users/alnour/Desktop/5allas/node_modules/rolldown/dist/shared/src-CYkh2Ybc.mjs:2659:18)
+    at unwrapBindingResult (file:///C:/Users/alnour/Desktop/5allas/node_modules/rolldown/dist/shared/src-CYkh2Ybc.mjs:2634:128)
+    at #build (file:///C:/Users/alnour/Desktop/5allas/node_modules/rolldown/dist/shared/src-CYkh2Ybc.mjs:4433:34)
+    at async buildEnvironment (file:///C:/Users/alnour/Desktop/5allas/node_modules/vite/dist/node/chunks/node.js:33468:64)
+    at async Object.build (file:///C:/Users/alnour/Desktop/5allas/node_modules/vite/dist/node/chunks/node.js:33871:19)
+    at async Object.buildApp (file:///C:/Users/alnour/Desktop/5allas/node_modules/vite/dist/node/chunks/node.js:33868:153)
+    at async CAC.<anonymous> (file:///C:/Users/alnour/Desktop/5allas/node_modules/vite/dist/node/cli.js:629:3)

@@ -47,7 +47,7 @@ export const useTasks = (viewDate?: string) => {
                     return {
                         ...task,
                         completed: nowCompleted,
-                        completedAt: nowCompleted ? new Date().toISOString() : undefined
+                        completedAt: nowCompleted ? activeDate : undefined
                     };
                 }
             }
@@ -142,9 +142,10 @@ export const useTasks = (viewDate?: string) => {
             const completedOnTarget = t.completedAt?.split('T')[0];
 
             // Show if:
-            // 1. Created on or before target date AND NOT yet completed
-            // 2. OR completed specifically on the target date
-            return (taskDate <= activeDate && !t.completed) || completedOnTarget === activeDate;
+            // 1. Born today (Created on active date) - Always show locally
+            // 2. OR Carry-over (Created before AND not yet completed)
+            // 3. OR Completed Specifically on this day (even if carried over)
+            return (taskDate === activeDate) || (taskDate < activeDate && !t.completed) || completedOnTarget === activeDate;
         })
         .map(t => {
             // Live completion status for the current view

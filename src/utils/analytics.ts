@@ -1,6 +1,6 @@
 // frontend/src/utils/analytics.ts
 import { Task, DailyStats } from '../types';
-import { format, subDays, startOfDay, parseISO } from 'date-fns';
+import { format, subDays, startOfDay } from 'date-fns';
 
 export const calculateDailyStats = (
     tasks: Task[],

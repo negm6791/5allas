@@ -1,6 +1,7 @@
 // frontend/src/pages/Dashboard.tsx
 import { useState, useMemo, useEffect } from 'react';
 import { useTasks } from '../hooks/useTasks';
+import { Task } from '../types';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { AddTaskModal } from '../components/tasks/AddTaskModal';
 import { TaskItemMinimal } from '../components/tasks/TaskItemMinimal';
@@ -59,11 +60,6 @@ export const Dashboard = () => {
         return "System Maintenance";
     };
 
-    const filteredTasks = useMemo(() => (displayTasks || []).filter(t => {
-        const title = t?.title || '';
-        const search = searchQuery || '';
-        return title.toLowerCase().includes(search.toLowerCase());
-    }), [displayTasks, searchQuery]);
 
     const todayStats = useMemo(() => {
         const total = displayTasks.length;
@@ -172,7 +168,7 @@ export const Dashboard = () => {
                                     {isMemoryMode ? `Memory Log: ${selectedDate}` : 'My Tasks'}
                                 </h2>
                                 <p className="text-2xl font-black text-indigo-950 tracking-tight">
-                                    {isMemoryMode ? 'Completed' : 'Total'} <span className="text-slate-400 text-lg ml-2">{displayTasks.length}</span>
+                                    {isMemoryMode ? 'Completed' : 'Total'} <span className="text-slate-400 text-lg ml-2">{filteredTasks.length}</span>
                                 </p>
                             </div>
                             {!isMemoryMode && (
@@ -201,8 +197,8 @@ export const Dashboard = () => {
                         <div className="flex-1 overflow-visible z-10">
                             <table className="w-full">
                                 <tbody>
-                                    {displayTasks.length > 0 ? (
-                                        displayTasks.map(task => (
+                                    {filteredTasks.length > 0 ? (
+                                        filteredTasks.map((task: Task) => (
                                             <TaskItemMinimal
                                                 key={task.id}
                                                 task={task}

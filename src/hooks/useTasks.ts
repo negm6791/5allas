@@ -1,6 +1,7 @@
 // frontend/src/hooks/useTasks.ts
+import { useEffect } from 'react';
 import { useLocalStorage } from './useLocalStorage';
-import { Task } from '../types';
+import { Task, SubTask } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 

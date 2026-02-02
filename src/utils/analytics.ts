@@ -12,31 +12,11 @@ export const calculateDailyStats = (
         const date = subDays(new Date(), i);
         const dateStr = format(startOfDay(date), 'yyyy-MM-dd');
 
-        // Total tasks available on this day
-        const activeTasks = tasks.filter(task => {
-            const createdDateStr = task.createdAt.split('T')[0];
-
-            // Task must be created on or before this day
-            if (createdDateStr > dateStr) return false;
-
-            if (task.isPersistent) return true;
-
-            // For non-persistent tasks:
-            // Include if NOT completed OR completed ON or AFTER this day
-            if (!task.completed) return true;
-
-            const completedDateStr = task.completedAt?.split('T')[0];
-            return completedDateStr && completedDateStr >= dateStr;
-        });
+        // Total tasks specifically assigned to this day
+        const activeTasks = tasks.filter(task => task.date === dateStr);
 
         // Count tasks completed on this day
-        const tasksCompletedCount = activeTasks.filter(task => {
-            if (task.isPersistent && task.completions) {
-                return task.completions.some(d => d === dateStr);
-            }
-            const completedDateStr = task.completedAt?.split('T')[0];
-            return task.completed && completedDateStr === dateStr;
-        }).length;
+        const tasksCompletedCount = activeTasks.filter(task => task.completed).length;
 
         const totalTasks = activeTasks.length;
 
@@ -55,24 +35,11 @@ export const calculateCompletionRate = (tasks: Task[]): number => {
     if (tasks.length === 0) return 0;
     const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-    const activeToday = tasks.filter(task => {
-        const createdDateStr = task.createdAt.split('T')[0];
-        if (createdDateStr > todayStr) return false;
-
-        if (task.isPersistent) return true;
-
-        if (!task.completed) return true;
-        const completedDateStr = task.completedAt?.split('T')[0];
-        return completedDateStr && completedDateStr >= todayStr;
-    });
+    const activeToday = tasks.filter(task => task.date === todayStr);
 
     if (activeToday.length === 0) return 0;
 
-    const completedToday = activeToday.filter(task => {
-        if (task.isPersistent) return task.completions?.includes(todayStr);
-        const completedDateStr = task.completedAt?.split('T')[0];
-        return task.completed && completedDateStr === todayStr;
-    }).length;
+    const completedToday = activeToday.filter(task => task.completed).length;
 
     return Math.round((completedToday / activeToday.length) * 100);
 };

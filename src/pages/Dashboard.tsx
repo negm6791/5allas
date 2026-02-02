@@ -68,10 +68,7 @@ export const Dashboard = () => {
 
     const todayStats = useMemo(() => {
         const total = displayTasks.length;
-        const completed = displayTasks.filter(t => {
-            if (t.isPersistent) return t.completions?.includes(activeViewDate);
-            return t.completed;
-        }).length;
+        const completed = displayTasks.filter(t => t.completed).length;
         return { completed, total };
     }, [displayTasks, activeViewDate]);
 

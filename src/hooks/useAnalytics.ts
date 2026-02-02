@@ -13,7 +13,7 @@ export const useAnalytics = (tasks: Task[]): AnalyticsData => {
             currentStreak: current,
             longestStreak: longest,
             last30Days,
-            totalTasksCompleted: tasks.filter(t => t.completed || (t.isPersistent && (t.completions?.length || 0) > 0)).length,
+            totalTasksCompleted: tasks.filter(t => t.completed).length,
         };
     }, [tasks]);
 };

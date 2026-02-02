@@ -1,6 +1,6 @@
-# 5allas (خلاص) - Full-Stack Productivity Application
+# 5allas (خلاص) - Modern Productivity App
 
-A modern, production-ready task management and routine tracking application built with **React**, **TypeScript**, **Express**, and **PostgreSQL**.
+A minimal, premium productivity tool for managing tasks and routines. Built with **React**, **TypeScript**, and **Tailwind CSS**. It uses **Browser Local Storage**, meaning it runs entirely on your device without needing a backend or database server.
 
 ## 🚀 Features
 
@@ -8,89 +8,36 @@ A modern, production-ready task management and routine tracking application buil
 - 🔄 **Routine Tracking** - Build lasting habits with daily/weekly/monthly routines
 - ⏩ **Task Carry-Over** - Unfinished tasks and routine subtasks automatically roll over to the next day
 - 📁 **Project Organization** - Group tasks by projects with custom colors
-- 📊 **Insights Dashboard** - Visualize your productivity with charts and stats
-- 📅 **Year Board (Heatmap)** - Track your consistency with a dynamic concentration-based view
-- 🚀 **Error Proofing** - Implementation of a Global Error Boundary to prevent silent crashes
-- 🎨 **Beautiful Aesthetics** - Deep emerald themes, smooth Framer Motion animations, and a premium Glassmorphic UI
+- 📊 **Productivity Curve** - Track your efficiency with interactive charts
+- 📅 **Year Board** - A minimalist heatmap of your consistency
+- 💾 **Local-First** - Data is saved automatically in your browser's LocalStorage
+- 🎨 **Premium UI** - Clean, dark-mode aesthetics with smooth Framer Motion animations
 
-## 🛠️ Tech Stack
-
-### Frontend
-- React 18 + TypeScript
-- Vite (build tool)
-- Tailwind CSS (styling)
-- Framer Motion (animations)
-- React Query (data fetching)
-- Zustand (state management)
-- Chart.js (visualizations)
-
-### Backend
-- Node.js + Express
-- TypeScript
-- PostgreSQL + Prisma ORM
-- JWT Authentication
-- bcrypt (password hashing)
-
-## 📦 Installation
+## 📦 Quick Start
 
 ### Prerequisites
-- Node.js 18+
-- PostgreSQL database
+- [Node.js](https://nodejs.org/) (version 18 or higher)
 
-### Backend Setup
+### Setup Instructions
 
-1. Navigate to backend directory:
-```bash
-cd backend
-```
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/your-username/5allas.git
+   cd 5allas
+   ```
 
-2. Install dependencies:
-```bash
-npm install
-```
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
 
-3. Configure environment variables in `.env`:
-```env
-DATABASE_URL="postgresql://user:password@localhost:5432/5allas"
-JWT_SECRET="your-super-secret-jwt-key"
-PORT=5000
-FRONTEND_URL="http://localhost:5173"
-```
+3. **Start the development server**:
+   ```bash
+   npm run dev
+   ```
 
-4. Run Prisma migrations:
-```bash
-npm run prisma:migrate
-npm run prisma:generate
-```
-
-5. Start the server:
-```bash
-npm run dev
-```
-
-### Frontend Setup
-
-1. Navigate to frontend directory:
-```bash
-cd frontend
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Configure environment variables in `.env`:
-```env
-VITE_API_URL=http://localhost:5000/api
-```
-
-4. Start the development server:
-```bash
-npm run dev
-```
-
-5. Open http://localhost:5173 in your browser
+4. **Open the app**:
+   Navigate to `http://localhost:5173` in your web browser.
 
 ## 🎯 Usage
 

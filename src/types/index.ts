@@ -16,7 +16,6 @@ export interface Task {
     title: string;
     completed: boolean;
     isPersistent?: boolean;
-    completions?: string[]; // Array of ISO dates (YYYY-MM-DD)
     date: string; // YYYY-MM-DD
     originalTaskId?: string;
     subtasks?: SubTask[];

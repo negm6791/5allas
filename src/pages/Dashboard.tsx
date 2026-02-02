@@ -22,7 +22,9 @@ import { DailyNotes } from '../components/notes/DailyNotes';
 
 export const Dashboard = () => {
     const todayDate = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
-    const { tasks: todayTasks, allTasks } = useTasks(todayDate);
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const activeViewDate = selectedDate || todayDate;
+    const { tasks: displayTasks, allTasks } = useTasks(activeViewDate);
     const analytics = useAnalytics(allTasks);
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -57,95 +59,39 @@ export const Dashboard = () => {
         return "System Maintenance";
     };
 
-    const filteredTasks = useMemo(() => (todayTasks || []).filter(t => {
+    const filteredTasks = useMemo(() => (displayTasks || []).filter(t => {
         const title = t?.title || '';
         const search = searchQuery || '';
         return title.toLowerCase().includes(search.toLowerCase());
-    }), [todayTasks, searchQuery]);
+    }), [displayTasks, searchQuery]);
 
     const todayStats = useMemo(() => {
-        const total = todayTasks.length;
-        const completed = todayTasks.filter(t => {
-            if (t.isPersistent) return t.completions?.includes(todayDate);
+        const total = displayTasks.length;
+        const completed = displayTasks.filter(t => {
+            if (t.isPersistent) return t.completions?.includes(activeViewDate);
             return t.completed;
         }).length;
         return { completed, total };
-    }, [todayTasks, todayDate]);
+    }, [displayTasks, activeViewDate]);
 
     const criticalCount = useMemo(() =>
-        todayTasks.filter(t => t.priority === 'critical' && !t.completed).length,
-        [todayTasks]);
+        displayTasks.filter(t => t.priority === 'critical' && !t.completed).length,
+        [displayTasks]);
 
-    const [selectedDate, setSelectedDate] = useState<string | null>(null);
-
-    const memoryTasks = useMemo(() => {
-        if (!selectedDate || selectedDate === todayDate) return [];
-        return allTasks.filter(t => {
-            // 1. Routine/Persistent Task: Check if completed on that specific day
-            if (t.isPersistent) {
-                return t.completions?.includes(selectedDate);
-            }
-            // 2. One-off Task: Check if completedAt matches the day
-            if (t.completedAt) {
-                return t.completedAt.startsWith(selectedDate);
-            }
-            return false;
-        });
-    }, [allTasks, selectedDate, todayDate]);
-
-    const displayTasks = selectedDate && selectedDate !== todayDate ? memoryTasks : filteredTasks;
     const isMemoryMode = selectedDate && selectedDate !== todayDate;
 
     // Aggregate tasks by date for the heatmap
     const heatmapData = useMemo(() => {
         const dailyGroups: Record<string, { total: number; completed: number }> = {};
-        const now = new Date();
-        const todayStr = format(now, 'yyyy-MM-dd');
 
+        // With independent instances, we just group by the task's date field
         allTasks.forEach(t => {
-            const created = t.createdAt.split('T')[0];
+            const ds = t.date;
+            if (!dailyGroups[ds]) dailyGroups[ds] = { total: 0, completed: 0 };
 
-            if (t.isPersistent) {
-                // Persistent tasks are "active" every day from creation until today
-                let d = new Date(created);
-                // Simple optimization: only track within the current year to keep loops small
-                const yearStart = new Date(now.getFullYear(), 0, 1);
-                if (d < yearStart) d = new Date(yearStart);
-
-                while (d <= now) {
-                    const ds = format(d, 'yyyy-MM-dd');
-                    if (!dailyGroups[ds]) dailyGroups[ds] = { total: 0, completed: 0 };
-                    dailyGroups[ds].total += 1;
-                    if (t.completions?.includes(ds)) {
-                        dailyGroups[ds].completed += 1;
-                    }
-                    d.setDate(d.getDate() + 1);
-                    if (ds === todayStr) break;
-                }
-            } else {
-                // One-off tasks are active from creation until completed (or today if pending)
-                const completed = t.completedAt?.split('T')[0];
-                let d = new Date(created);
-                const end = completed ? new Date(completed) : now;
-
-                const yearStart = new Date(now.getFullYear(), 0, 1);
-                if (d < yearStart) d = new Date(yearStart);
-
-                while (d <= end) {
-                    const ds = format(d, 'yyyy-MM-dd');
-                    if (!dailyGroups[ds]) dailyGroups[ds] = { total: 0, completed: 0 };
-
-                    // Only count towards total if not completed yet OR if this is the completion day
-                    if (!completed || ds <= completed) {
-                        dailyGroups[ds].total += 1;
-                    }
-
-                    if (completed === ds) {
-                        dailyGroups[ds].completed += 1;
-                    }
-                    d.setDate(d.getDate() + 1);
-                    if (ds === todayStr || (completed && ds === completed)) break;
-                }
+            dailyGroups[ds].total += 1;
+            if (t.completed) {
+                dailyGroups[ds].completed += 1;
             }
         });
 

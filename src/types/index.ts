@@ -7,7 +7,8 @@ export interface SubTask {
     title: string;
     completed: boolean;
     date: string; // YYYY-MM-DD
-    completedAt?: string; // YYYY-MM-DD
+    completedAt?: string; // ISO string
+    originalSubTaskId?: string;
 }
 
 export interface Task {
@@ -16,6 +17,8 @@ export interface Task {
     completed: boolean;
     isPersistent?: boolean;
     completions?: string[]; // Array of ISO dates (YYYY-MM-DD)
+    date: string; // YYYY-MM-DD
+    originalTaskId?: string;
     subtasks?: SubTask[];
     createdAt: string;
     completedAt?: string;

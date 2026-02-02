@@ -5,11 +5,17 @@ import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 
 export const useTasks = (viewDate?: string) => {
-    const [tasks, setTasks] = useLocalStorage<Task[]>('5allas_tasks', []);
+    const [allStoredTasks, setAllStoredTasks] = useLocalStorage<Task[]>('5allas_tasks_v2', []);
 
     // Standardized date string
     const today = format(new Date(), 'yyyy-MM-dd');
     const activeDate = viewDate ? viewDate.split('T')[0] : today;
+
+    // --- Core Logic: Task Cloning & Carry-Over ---
+
+    // We want to ensure that for EVERY day up to activeDate, 
+    // all incomplete tasks have been "born" or "carried" into it.
+    // However, for performance, we only "solidify" the carry-over when needed.
 
     const addTask = (title: string, isPersistent: boolean = false, priority: 'critical' | 'standard' | 'secondary' = 'standard') => {
         const newTask: Task = {
@@ -17,64 +23,69 @@ export const useTasks = (viewDate?: string) => {
             title,
             completed: false,
             isPersistent,
-            completions: [],
+            date: activeDate, // Explicit day
             createdAt: new Date().toISOString(),
             priority,
+            subtasks: []
         };
-        setTasks(prev => [...prev, newTask]);
+        setAllStoredTasks(prev => [...prev, newTask]);
         return newTask;
     };
 
-    const toggleTask = (id: string, toggleDate?: string) => {
-        const targetDate = (toggleDate || activeDate).split('T')[0];
+    const toggleTask = (id: string) => {
+        setAllStoredTasks(prev => {
+            const taskToToggle = prev.find(t => t.id === id);
+            if (!taskToToggle) return prev;
 
-        setTasks(prev => prev.map(task => {
-            if (task.id === id) {
-                if (task.isPersistent) {
-                    const completions = task.completions || [];
-                    const isAlreadyCompleted = completions.includes(targetDate);
-                    const newCompletions = isAlreadyCompleted
-                        ? completions.filter(d => d !== targetDate)
-                        : [...completions, targetDate];
-
+            const nowCompleted = !taskToToggle.completed;
+            const updatedTasks = prev.map(t => {
+                if (t.id === id) {
                     return {
-                        ...task,
-                        completions: newCompletions,
-                        completed: !isAlreadyCompleted
-                    };
-                } else {
-                    const nowCompleted = !task.completed;
-                    return {
-                        ...task,
+                        ...t,
                         completed: nowCompleted,
-                        completedAt: nowCompleted ? activeDate : undefined
+                        completedAt: nowCompleted ? new Date().toISOString() : undefined
                     };
                 }
+                return t;
+            });
+
+            // --- Future Cleanup Logic ---
+            // If we just marked a task as COMPLETED in the past, 
+            // delete all future clones of this task.
+            if (nowCompleted) {
+                const originalId = taskToToggle.originalTaskId || taskToToggle.id;
+                return updatedTasks.filter(t => {
+                    // Keep if it's NOT a future clone of this task
+                    const isClone = t.originalTaskId === originalId || t.id === originalId;
+                    const isFuture = t.date > activeDate;
+                    return !(isClone && isFuture);
+                });
             }
-            return task;
-        }));
+
+            return updatedTasks;
+        });
     };
 
     const deleteTask = (id: string) => {
-        setTasks(prev => prev.filter(task => task.id !== id));
+        setAllStoredTasks(prev => prev.filter(task => task.id !== id));
     };
 
     const updateTask = (id: string, updates: Partial<Task>) => {
-        setTasks(prev => prev.map(task =>
+        setAllStoredTasks(prev => prev.map(task =>
             task.id === id ? { ...task, ...updates } : task
         ));
     };
 
-    const addSubTask = (taskId: string, title: string, subTaskDate: string) => {
-        const targetDate = subTaskDate.split('T')[0];
-        const newSubTask = {
+    // Subtasks also need to be independent per instance
+    const addSubTask = (taskId: string, title: string) => {
+        const newSubTask: SubTask = {
             id: uuidv4(),
             title,
             completed: false,
-            date: targetDate,
+            date: activeDate,
         };
 
-        setTasks(prev => prev.map(task =>
+        setAllStoredTasks(prev => prev.map(task =>
             task.id === taskId
                 ? { ...task, subtasks: [...(task.subtasks || []), newSubTask] }
                 : task
@@ -83,42 +94,15 @@ export const useTasks = (viewDate?: string) => {
     };
 
     const toggleSubTask = (taskId: string, subTaskId: string) => {
-        setTasks(prev => prev.map(task => {
+        setAllStoredTasks(prev => prev.map(task => {
             if (task.id === taskId) {
-                const subTaskToToggle = (task.subtasks || []).find(st => st.id === subTaskId);
-                if (!subTaskToToggle) return task;
-
-                const subTaskDate = subTaskToToggle.date;
-                const updatedSubTasks = (task.subtasks || []).map(st => {
-                    if (st.id === subTaskId) {
-                        const nowCompleted = !st.completed;
-                        return {
-                            ...st,
-                            completed: nowCompleted,
-                            completedAt: nowCompleted ? activeDate : undefined
-                        };
-                    }
-                    return st;
-                });
-
-                // Logic: If all sub-tasks for that specific day are done, mark the persistent task as completed for that day
-                const daySubs = updatedSubTasks.filter(st => st.date === subTaskDate);
-                const allDone = daySubs.length > 0 && daySubs.every(st => st.completed);
-
-                let updatedCompletions = task.completions || [];
-                if (task.isPersistent) {
-                    if (allDone && !updatedCompletions.includes(subTaskDate)) {
-                        updatedCompletions = [...updatedCompletions, subTaskDate];
-                    } else if (!allDone && updatedCompletions.includes(subTaskDate)) {
-                        updatedCompletions = updatedCompletions.filter(d => d !== subTaskDate);
-                    }
-                }
-
                 return {
                     ...task,
-                    subtasks: updatedSubTasks,
-                    completions: updatedCompletions,
-                    completed: task.isPersistent ? (subTaskDate === activeDate ? allDone : updatedCompletions.includes(activeDate)) : task.completed
+                    subtasks: (task.subtasks || []).map(st =>
+                        st.id === subTaskId
+                            ? { ...st, completed: !st.completed, completedAt: !st.completed ? new Date().toISOString() : undefined }
+                            : st
+                    )
                 };
             }
             return task;
@@ -126,41 +110,67 @@ export const useTasks = (viewDate?: string) => {
     };
 
     const deleteSubTask = (taskId: string, subTaskId: string) => {
-        setTasks(prev => prev.map(task =>
+        setAllStoredTasks(prev => prev.map(task =>
             task.id === taskId
                 ? { ...task, subtasks: (task.subtasks || []).filter(st => st.id !== subTaskId) }
                 : task
         ));
     };
 
-    // Derived filtering & synchronization
-    const filteredTasks = tasks
-        .filter(t => {
-            if (t.isPersistent) return true;
+    // --- Computation: Which tasks should I see on activeDate? ---
 
-            const taskDate = t.createdAt.split('T')[0];
-            const completedOnTarget = t.completedAt?.split('T')[0];
+    // 1. Get all tasks explicitly born on activeDate
+    const explicitlyBorn = allStoredTasks.filter(t => t.date === activeDate);
 
-            // Show if:
-            // 1. Born today (Created on active date) - Always show locally
-            // 2. OR Carry-over (Created before AND not yet completed)
-            // 3. OR Completed Specifically on this day (even if carried over)
-            return (taskDate === activeDate) || (taskDate < activeDate && !t.completed) || completedOnTarget === activeDate;
-        })
-        .map(t => {
-            // Live completion status for the current view
-            if (t.isPersistent) {
-                return {
-                    ...t,
-                    completed: t.completions?.includes(activeDate) || false
-                };
-            }
-            return t;
-        });
+    // 2. Identify missing carry-overs
+    // These are tasks born before activeDate that were NOT completed on their day 
+    // AND don't have a record for activeDate yet.
+    const potentialCarryOvers = allStoredTasks.filter(t => {
+        if (t.date >= activeDate) return false;
+
+        // Is there already an instance for this original task on activeDate?
+        const originalId = t.originalTaskId || t.id;
+        const alreadyHasInstance = allStoredTasks.some(other => (other.originalTaskId === originalId || other.id === originalId) && other.date === activeDate);
+        if (alreadyHasInstance) return false;
+
+        // Is this the "latest" instance before activeDate?
+        const isLatestBefore = !allStoredTasks.some(other =>
+            (other.originalTaskId === originalId || other.id === originalId) &&
+            other.date > t.date &&
+            other.date < activeDate
+        );
+
+        return isLatestBefore && !t.completed;
+    });
+
+    // --- Side Effect: Materialize Carry Overs ---
+    // If we have potentialCarryOvers, we should save them to localStorage so they are "independent"
+    useEffect(() => {
+        if (potentialCarryOvers.length > 0) {
+            const newClones: Task[] = potentialCarryOvers.map(t => ({
+                ...t,
+                id: uuidv4(),
+                date: activeDate,
+                originalTaskId: t.originalTaskId || t.id,
+                completed: false,
+                completedAt: undefined,
+                // Clone subtasks too
+                subtasks: (t.subtasks || []).map(st => ({
+                    ...st,
+                    id: uuidv4(),
+                    date: activeDate,
+                    originalSubTaskId: st.originalSubTaskId || st.id,
+                    completed: false,
+                    completedAt: undefined
+                }))
+            }));
+            setAllStoredTasks(prev => [...prev, ...newClones]);
+        }
+    }, [potentialCarryOvers.length, activeDate]);
 
     return {
-        tasks: filteredTasks,
-        allTasks: tasks,
+        tasks: explicitlyBorn,
+        allTasks: allStoredTasks,
         addTask,
         toggleTask,
         deleteTask,

@@ -14,29 +14,37 @@ export const calculateDailyStats = (
 
         // Total tasks available on this day
         const activeTasks = tasks.filter(task => {
-            if (task.isPersistent) {
-                const createdDate = startOfDay(parseISO(task.createdAt));
-                return createdDate <= startOfDay(date);
-            }
-            // For non-persistent tasks, they only count on the day they were created or completed
-            return task.createdAt.startsWith(dateStr) || (task.completedAt && task.completedAt.startsWith(dateStr));
+            const createdDateStr = task.createdAt.split('T')[0];
+
+            // Task must be created on or before this day
+            if (createdDateStr > dateStr) return false;
+
+            if (task.isPersistent) return true;
+
+            // For non-persistent tasks:
+            // Include if NOT completed OR completed ON or AFTER this day
+            if (!task.completed) return true;
+
+            const completedDateStr = task.completedAt?.split('T')[0];
+            return completedDateStr && completedDateStr >= dateStr;
         });
 
         // Count tasks completed on this day
-        const tasksCompleted = activeTasks.filter(task => {
+        const tasksCompletedCount = activeTasks.filter(task => {
             if (task.isPersistent && task.completions) {
                 return task.completions.some(d => d === dateStr);
             }
-            return task.completedAt && task.completedAt.startsWith(dateStr);
+            const completedDateStr = task.completedAt?.split('T')[0];
+            return task.completed && completedDateStr === dateStr;
         }).length;
 
         const totalTasks = activeTasks.length;
 
         stats.push({
             date: dateStr,
-            tasksCompleted,
+            tasksCompleted: tasksCompletedCount,
             totalTasks,
-            completionRate: totalTasks > 0 ? Math.round((tasksCompleted / totalTasks) * 100) : 0,
+            completionRate: totalTasks > 0 ? Math.round((tasksCompletedCount / totalTasks) * 100) : 0,
         });
     }
 
@@ -45,31 +53,36 @@ export const calculateDailyStats = (
 
 export const calculateCompletionRate = (tasks: Task[]): number => {
     if (tasks.length === 0) return 0;
-    const today = format(new Date(), 'yyyy-MM-dd');
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-    const activeToday = tasks.filter(t => {
-        if (t.isPersistent) return true;
-        return t.createdAt.startsWith(today) || (t.completedAt && t.completedAt.startsWith(today));
+    const activeToday = tasks.filter(task => {
+        const createdDateStr = task.createdAt.split('T')[0];
+        if (createdDateStr > todayStr) return false;
+
+        if (task.isPersistent) return true;
+
+        if (!task.completed) return true;
+        const completedDateStr = task.completedAt?.split('T')[0];
+        return completedDateStr && completedDateStr >= todayStr;
     });
 
     if (activeToday.length === 0) return 0;
 
-    const completed = activeToday.filter(t => {
-        if (t.isPersistent) return t.completions?.includes(today);
-        return t.completed;
+    const completedToday = activeToday.filter(task => {
+        if (task.isPersistent) return task.completions?.includes(todayStr);
+        const completedDateStr = task.completedAt?.split('T')[0];
+        return task.completed && completedDateStr === todayStr;
     }).length;
 
-    return Math.round((completed / activeToday.length) * 100);
+    return Math.round((completedToday / activeToday.length) * 100);
 };
 
 export const calculateStreak = (tasks: Task[]): { current: number; longest: number } => {
-    const completionsMap: { [key: string]: boolean } = {};
+    const dailyCompletionMap: Record<string, boolean> = {};
 
     tasks.forEach(task => {
-        if (task.isPersistent && task.completions) {
-            task.completions.forEach(d => completionsMap[d] = true);
-        } else if (task.completedAt) {
-            completionsMap[format(parseISO(task.completedAt), 'yyyy-MM-dd')] = true;
+        if (task.completed) {
+            dailyCompletionMap[task.date] = true;
         }
     });
 
@@ -80,7 +93,7 @@ export const calculateStreak = (tasks: Task[]): { current: number; longest: numb
     // Check back for 365 days
     for (let i = 0; i < 365; i++) {
         const d = format(subDays(new Date(), i), 'yyyy-MM-dd');
-        if (completionsMap[d]) {
+        if (dailyCompletionMap[d]) {
             tempStreak++;
         } else {
             if (i === 0) continue; // Today doesn't break it yet
@@ -94,7 +107,7 @@ export const calculateStreak = (tasks: Task[]): { current: number; longest: numb
     current = 0;
     for (let i = 0; i < 365; i++) {
         const d = format(subDays(new Date(), i), 'yyyy-MM-dd');
-        if (completionsMap[d]) {
+        if (dailyCompletionMap[d]) {
             current++;
         } else {
             if (i === 0) continue;

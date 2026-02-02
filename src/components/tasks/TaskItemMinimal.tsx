@@ -18,16 +18,7 @@ export const TaskItemMinimal = ({ task, viewDate, onEdit }: TaskItemMinimalProps
     const [subTaskTitle, setSubTaskTitle] = useState('');
 
     const targetDate = viewDate || format(new Date(), 'yyyy-MM-dd');
-    const todaySubTasks = (task.subtasks || []).filter(st => {
-        const subDate = st.date;
-        const compDate = st.completedAt;
-
-        // Show if:
-        // 1. Created on target date
-        // 2. Created before target date AND NOT yet completed
-        // 3. Completed specifically on the target date
-        return subDate === targetDate || (subDate < targetDate && !st.completed) || compDate === targetDate;
-    });
+    const todaySubTasks = (task.subtasks || []).filter(st => st.date === targetDate);
 
     const handleAddSubTask = (e: React.FormEvent) => {
         e.preventDefault();

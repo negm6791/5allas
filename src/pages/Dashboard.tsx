@@ -26,7 +26,7 @@ export const Dashboard = () => {
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const activeViewDate = selectedDate || todayDate;
     const { tasks: displayTasks, allTasks } = useTasks(activeViewDate);
-    const analytics = useAnalytics(allTasks);
+    const analytics = useAnalytics(allTasks, activeViewDate);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);

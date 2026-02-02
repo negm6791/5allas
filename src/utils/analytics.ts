@@ -31,17 +31,17 @@ export const calculateDailyStats = (
     return stats;
 };
 
-export const calculateCompletionRate = (tasks: Task[]): number => {
+export const calculateCompletionRate = (tasks: Task[], targetDate?: string): number => {
     if (tasks.length === 0) return 0;
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const dateStr = targetDate || format(new Date(), 'yyyy-MM-dd');
 
-    const activeToday = tasks.filter(task => task.date === todayStr);
+    const activeOnDate = tasks.filter(task => task.date === dateStr);
 
-    if (activeToday.length === 0) return 0;
+    if (activeOnDate.length === 0) return 0;
 
-    const completedToday = activeToday.filter(task => task.completed).length;
+    const completedOnDate = activeOnDate.filter(task => task.completed).length;
 
-    return Math.round((completedToday / activeToday.length) * 100);
+    return Math.round((completedOnDate / activeOnDate.length) * 100);
 };
 
 export const calculateStreak = (tasks: Task[]): { current: number; longest: number } => {

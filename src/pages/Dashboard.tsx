@@ -60,6 +60,11 @@ export const Dashboard = () => {
         return "System Maintenance";
     };
 
+    const filteredTasks = useMemo(() => (displayTasks || []).filter(t => {
+        const title = t?.title || '';
+        const search = searchQuery || '';
+        return title.toLowerCase().includes(search.toLowerCase());
+    }), [displayTasks, searchQuery]);
 
     const todayStats = useMemo(() => {
         const total = displayTasks.length;

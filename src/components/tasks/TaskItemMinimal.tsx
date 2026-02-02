@@ -23,7 +23,7 @@ export const TaskItemMinimal = ({ task, viewDate, onEdit }: TaskItemMinimalProps
     const handleAddSubTask = (e: React.FormEvent) => {
         e.preventDefault();
         if (!subTaskTitle.trim()) return;
-        addSubTask(task.id, subTaskTitle, targetDate);
+        addSubTask(task.id, subTaskTitle);
         setSubTaskTitle('');
     };
 

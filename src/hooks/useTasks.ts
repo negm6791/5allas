@@ -1,22 +1,36 @@
 // frontend/src/hooks/useTasks.ts
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import { Task, SubTask } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 
 export const useTasks = (viewDate?: string) => {
-    const [allStoredTasks, setAllStoredTasks] = useLocalStorage<Task[]>('5allas_tasks_v2', []);
+    const [allStoredTasks, setAllStoredTasks] = useLocalStorage<Task[]>('5allas_tasks', []);
 
     // Standardized date string
     const today = format(new Date(), 'yyyy-MM-dd');
     const activeDate = viewDate ? viewDate.split('T')[0] : today;
 
-    // --- Core Logic: Task Cloning & Carry-Over ---
-
-    // We want to ensure that for EVERY day up to activeDate, 
-    // all incomplete tasks have been "born" or "carried" into it.
-    // However, for performance, we only "solidify" the carry-over when needed.
+    // --- Data Migration & Normalization ---
+    // Ensure old tasks have the 'date' field and are correctly identified
+    useEffect(() => {
+        const needsStateMigration = allStoredTasks.some(t => !t.date);
+        if (needsStateMigration) {
+            setAllStoredTasks(prev => prev.map(t => {
+                if (!t.date) {
+                    return {
+                        ...t,
+                        date: t.createdAt.split('T')[0],
+                        // Ensure it's not showing up as completed on future days unintentionally
+                        // If it has completions from the old system, we should ideally convert them
+                        // but for now, just giving it a date is the priority.
+                    };
+                }
+                return t;
+            }));
+        }
+    }, [allStoredTasks]);
 
     const addTask = (title: string, isPersistent: boolean = false, priority: 'critical' | 'standard' | 'secondary' = 'standard') => {
         const newTask: Task = {
@@ -50,9 +64,7 @@ export const useTasks = (viewDate?: string) => {
                 return t;
             });
 
-            // --- Future Cleanup Logic ---
-            // If we just marked a task as COMPLETED in the past, 
-            // delete all future clones of this task.
+            // Future Cleanup: If marked as completed in the past, delete future clones
             if (nowCompleted) {
                 const originalId = taskToToggle.originalTaskId || taskToToggle.id;
                 return updatedTasks.filter(t => {
@@ -118,44 +130,44 @@ export const useTasks = (viewDate?: string) => {
         ));
     };
 
-    // --- Computation: Which tasks should I see on activeDate? ---
+    // --- Computation: Visible Tasks on activeDate ---
+    const tasksForActiveDate = useMemo(() => {
+        return allStoredTasks.filter(t => t.date === activeDate);
+    }, [allStoredTasks, activeDate]);
 
-    // 1. Get all tasks explicitly born on activeDate
-    const explicitlyBorn = allStoredTasks.filter(t => t.date === activeDate);
-
-    // 2. Identify missing carry-overs
-    // These are tasks born before activeDate that were NOT completed on their day 
-    // AND don't have a record for activeDate yet.
-    const potentialCarryOvers = allStoredTasks.filter(t => {
-        if (t.date >= activeDate) return false;
-
-        // Is there already an instance for this original task on activeDate?
-        const originalId = t.originalTaskId || t.id;
-        const alreadyHasInstance = allStoredTasks.some(other => (other.originalTaskId === originalId || other.id === originalId) && other.date === activeDate);
-        if (alreadyHasInstance) return false;
-
-        // Is this the "latest" instance before activeDate?
-        const isLatestBefore = !allStoredTasks.some(other =>
-            (other.originalTaskId === originalId || other.id === originalId) &&
-            other.date > t.date &&
-            other.date < activeDate
-        );
-
-        return isLatestBefore && !t.completed;
-    });
-
-    // --- Side Effect: Materialize Carry Overs ---
-    // If we have potentialCarryOvers, we should save them to localStorage so they are "independent"
+    // --- Carry Over Logic ---
     useEffect(() => {
-        if (potentialCarryOvers.length > 0) {
-            const newClones: Task[] = potentialCarryOvers.map(t => ({
+        // Find tasks from the past that were incomplete and aren't present today
+        const missingCarryOvers = allStoredTasks.filter(t => {
+            if (t.date >= activeDate) return false; // Only consider tasks from before activeDate
+            if (t.completed) return false; // Only carry over incomplete tasks
+
+            const originalId = t.originalTaskId || t.id;
+
+            // Is there already an instance (or original) on activeDate?
+            const hasInstanceToday = allStoredTasks.some(other =>
+                (other.originalTaskId === originalId || other.id === originalId) && other.date === activeDate
+            );
+            if (hasInstanceToday) return false;
+
+            // Is this the most recent instance before activeDate?
+            const isMostRecentBefore = !allStoredTasks.some(other =>
+                (other.originalTaskId === originalId || other.id === originalId) &&
+                other.date > t.date &&
+                other.date < activeDate
+            );
+
+            return isMostRecentBefore;
+        });
+
+        if (missingCarryOvers.length > 0) {
+            const newClones: Task[] = missingCarryOvers.map(t => ({
                 ...t,
                 id: uuidv4(),
                 date: activeDate,
                 originalTaskId: t.originalTaskId || t.id,
                 completed: false,
                 completedAt: undefined,
-                // Clone subtasks too
                 subtasks: (t.subtasks || []).map(st => ({
                     ...st,
                     id: uuidv4(),
@@ -167,10 +179,10 @@ export const useTasks = (viewDate?: string) => {
             }));
             setAllStoredTasks(prev => [...prev, ...newClones]);
         }
-    }, [potentialCarryOvers.length, activeDate]);
+    }, [allStoredTasks, activeDate]);
 
     return {
-        tasks: explicitlyBorn,
+        tasks: tasksForActiveDate,
         allTasks: allStoredTasks,
         addTask,
         toggleTask,

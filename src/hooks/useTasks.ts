@@ -109,13 +109,24 @@ export const useTasks = (viewDate?: string) => {
     const toggleSubTask = (taskId: string, subTaskId: string) => {
         setAllStoredTasks(prev => prev.map(task => {
             if (task.id === taskId) {
+                const updatedSubTasks = (task.subtasks || []).map(st =>
+                    st.id === subTaskId
+                        ? { ...st, completed: !st.completed, completedAt: !st.completed ? new Date().toISOString() : undefined }
+                        : st
+                );
+
+                // Auto-toggle parent task only for routine tasks with subtasks
+                let shouldBeCompleted = task.completed;
+                if (task.isPersistent && updatedSubTasks.length > 0) {
+                    const allDone = updatedSubTasks.every(st => st.completed);
+                    shouldBeCompleted = allDone;
+                }
+
                 return {
                     ...task,
-                    subtasks: (task.subtasks || []).map(st =>
-                        st.id === subTaskId
-                            ? { ...st, completed: !st.completed, completedAt: !st.completed ? new Date().toISOString() : undefined }
-                            : st
-                    )
+                    completed: shouldBeCompleted,
+                    completedAt: shouldBeCompleted && !task.completed ? new Date().toISOString() : (shouldBeCompleted ? task.completedAt : undefined),
+                    subtasks: updatedSubTasks
                 };
             }
             return task;
